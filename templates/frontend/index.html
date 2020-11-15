@@ -1,0 +1,204 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+   	<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+    <script src="http://malsup.github.com/jquery.form.js"></script>
+ 
+	<title>Document</title>
+</head>
+<body>
+	<div class="container">
+			<div class="row">
+				<div class="col-12">
+					<div class="row">
+						
+					<div class="col-5">
+						<h1>USERS</h1>
+					</div>
+					<div class="col-7 d-flex justify-content-end align-items-center">
+						<form method="post" id="filter_data">
+							{% csrf_token %}
+							<input type="text" placeholder="Min date: dd:mm:yyyy" name="min_date" >
+							<input type="text" placeholder="Max date: dd:mm:yyyy" name="max_date" >
+							<button type="submit" class="btn btn-primary">Filter</button>
+						</form>
+					</div>
+					</div>
+
+					<table class="table">
+					  	<thead>
+						    <tr>
+						      	<th scope="col">id</th>
+						      	<th scope="col">First name</th>
+						      	<th scope="col">Last name</th>
+						      	<th scope="col">Birth date</th>
+						      	<th scope="col">Registration date</th>
+						    </tr>
+						</thead>
+						<tbody id="users">
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<hr>
+			<div class="row">
+
+				<div class="col-lg-6 col-md-12 col-sm-12">
+					<h1>Sign UP</h1>
+					<form method="post" action="http://127.0.0.1:8000/api/signup/">
+						{% csrf_token %}
+					  	<div class="form-group">
+					    	<label for="username">Username</label>
+					    	<input type="text" class="form-control" id="username" name="username">
+					  	</div>
+					  	<div class="form-group">
+					    	<label for="firstname">Firstname</label>
+					    	<input type="text" class="form-control" id="firstname" name="first_name">
+					  	</div>
+					  	<div class="form-group">
+					    	<label for="lastname">Lastname</label>
+					    	<input type="text" class="form-control" id="lastname" name="last_name">
+					  	</div>
+					  	<div class="form-group">
+					    	<label for="exampleInputPassword1">Password</label>
+					    	<input type="password" class="form-control" id="exampleInputPassword1" name="password">
+					  	</div>
+					  	<div class="form-group">
+					    	<label for="exampleInputPassword2">Password confirm</label>
+					    	<input type="password" class="form-control" id="exampleInputPassword2" name="password2">
+					  	</div>
+					  	<div class="form-group">
+					    	<label for="date_of_birth">Date of birth</label>
+					    	<input type="date" class="form-control" id="date_of_birth" name="date_of_birth">
+					  	</div>
+					  	<button type="submit" class="btn btn-primary">Submit</button>
+					</form>
+				</div>
+				<div class="col-lg-6 col-md-12 col-sm-12">
+					<h1>Sign IN</h1>
+					<form method="post" id="signin">
+						{% csrf_token %}
+					  	<div class="form-group">
+					    	<label for="username">Username</label>
+					    	<input type="text" class="form-control" id="username" name="username">
+					  	</div>
+					  	<div class="form-group">
+					    	<label for="exampleInputPassword1">Password</label>
+					    	<input type="password" class="form-control" id="exampleInputPassword1" name="password">
+					  	</div>
+					  	<button type="submit" class="btn btn-primary">Submit</button>
+					</form>
+					
+				</div>
+			</div>
+	</div>
+<script type="text/javascript">
+	const expirationRefrDuration = 1000 * 60 * 60
+	const expirationAccDuration = 1000 * 60 * 4.5
+	let date = new Date().getTime()
+	
+	if (localStorage.getItem('refresh_token'))
+	{
+		if (date - localStorage.getItem('time_refresh') <= expirationRefrDuration){
+			setInterval(refresh_token, 1000)
+		}
+		else {
+			localStorage.clear()
+		}
+	}
+
+	function buildList(){
+        var wrapper = document.getElementById('users')
+    	var url = 'http://127.0.0.1:8000/api/users/'
+
+        $.ajax({
+            url : 'http://127.0.0.1:8000/api/users/', // or whatever
+            type: 'GET',
+            headers: {"Authorization": "Bearer " + localStorage.getItem('access_token')},
+            dataType : 'json',
+            success : function (response) {
+                var users = response
+                // console.log(users)
+                for (var i in users) {
+                    var item = `
+                        	<tr>
+						      	<th scope="row">${users[i]['id']}</th>
+						      	<td>${users[i]['first_name']}</td>
+						      	<td>${users[i]['last_name']}</td>
+						      	<td>${users[i]['date_of_birth']}</td>
+						      	<td>${users[i]['date_joined']}</td>
+						    </tr>
+                            `
+                    wrapper.innerHTML += item
+                }
+            }
+            });
+    }
+
+    buildList()
+
+    $('#filter_data').ajaxForm({
+        url : 'http://127.0.0.1:8000/api/users_filter/', // or whatever
+        headers: {"Authorization": "Bearer " + localStorage.getItem('access_token')},
+        dataType : 'json',
+        success : function (response) {
+            var users = response
+        	var wrapper = document.getElementById('users')
+        	wrapper.innerHTML = ''
+        	for (var i in users) {
+                var item = `
+                	<tr>
+				      	<th scope="row">${users[i]['id']}</th>
+				      	<td>${users[i]['first_name']}</td>
+				      	<td>${users[i]['last_name']}</td>
+				      	<td>${users[i]['date_of_birth']}</td>
+				      	<td>${users[i]['date_joined']}</td>
+				    </tr>
+                    `
+                wrapper.innerHTML += item
+            }
+        }
+    });
+
+    function refresh_token(){
+        let now = new Date().getTime();
+    	// console.log(now - localStorage.getItem('time_access'))
+
+    	if(now - localStorage.getItem('time_access') >= expirationAccDuration){
+	    	$.ajax({
+	    		url : 'http://127.0.0.1:8000/api/token/refresh/', // or whatever
+	    		type: 'POST',
+	        	data: {
+	        		"token": localStorage.getItem('access_token'),
+	        		"refresh": localStorage.getItem('refresh_token')
+	        	},
+	        	dataType : 'json',
+	        	success: function (response) {
+	        		let now = new Date().getTime();
+	            	localStorage.setItem('access_token', response.access);
+	            	localStorage.setItem('time_access', now);
+	        	}
+	    	});
+    	}
+    }
+
+    $('#signin').ajaxForm({
+        url : 'http://127.0.0.1:8000/api/token/', // or whatever
+        dataType : 'json',
+        success : function (response) {
+        	var now = new Date().getTime();
+            localStorage.setItem('access_token', response.access);
+            localStorage.setItem('time_access', now);
+            localStorage.setItem('refresh_token', response.refresh);
+            localStorage.setItem('time_refresh', now)
+            location.reload()
+        }
+    });
+</script>
+</body>
+</html>
